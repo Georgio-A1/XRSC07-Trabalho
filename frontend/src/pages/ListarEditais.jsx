@@ -56,31 +56,41 @@ const ListarEditais = () => {
   }
 
   return (
-    <div>
-      <h1>Editais Disponíveis</h1>
+    <div className="max-w-5xl mx-auto p-6 bg-white rounded-lg shadow-md space-y-6">
+      <h1 className="text-3xl font-bold text-gray-800 mb-4">Editais Disponíveis</h1>
+
       {editais.length === 0 ? (
-        <p>Nenhum edital disponível para inscrição no momento.</p>
+        <p className="text-gray-600 text-center">Nenhum edital disponível para inscrição no momento.</p>
       ) : (
-        <ul>
+        <ul className="space-y-6">
           {editais.map((edital) => (
-            <li key={edital._id}>
-              <h2>{edital.nome_bolsa}</h2>
-              <p>{edital.descricao}</p>
-              <p>
-                Período de Inscrição:{" "}
-                {formatarData(edital.data_inicio_inscricao)} - {formatarData(edital.data_fim_inscricao)}
+            <li key={edital._id} className="border border-gray-300 rounded-lg p-5 shadow-sm hover:shadow-md transition">
+              <h2 className="text-2xl font-semibold text-blue-700">{edital.nome_bolsa}</h2>
+              <p className="mt-2 text-gray-700">{edital.descricao}</p>
+              <p className="mt-3 text-gray-600">
+                <strong>Período de Inscrição:</strong>{" "}
+                <span>{formatarData(edital.data_inicio_inscricao)} - {formatarData(edital.data_fim_inscricao)}</span>
               </p>
 
-              <p><strong>Documentos Obrigatórios:</strong></p>
-              <ul>
-                {edital.documentos_exigidos
-                  .filter(doc => doc.obrigatorio)
-                  .map(doc => (
-                    <li key={doc.tipo}>{doc.tipo} - {doc.descricao}</li>
-                  ))}
-              </ul>
+              <div className="mt-4">
+                <p className="font-semibold text-gray-800 mb-1">Documentos Obrigatórios:</p>
+                <ul className="list-disc list-inside text-gray-700">
+                  {edital.documentos_exigidos
+                    .filter(doc => doc.obrigatorio)
+                    .map(doc => (
+                      <li key={doc.tipo}>
+                        <span className="font-medium">{doc.tipo}</span> - {doc.descricao}
+                      </li>
+                    ))}
+                </ul>
+              </div>
 
-              <button onClick={() => handleInscricao(edital._id)}>Inscreva-se</button>
+              <button
+                onClick={() => handleInscricao(edital._id)}
+                className="mt-5 bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Inscreva-se
+              </button>
             </li>
           ))}
         </ul>

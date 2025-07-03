@@ -1,7 +1,6 @@
 // src/pages/LoginPage.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from './LoginPage.module.css';
 
 const LoginPage = () => {
     const [cpf, setCpf] = useState('');
@@ -89,69 +88,96 @@ const LoginPage = () => {
     };
 
     return (
-        <div className={styles['login-container']}>
-            <h1>Login</h1>
-            {erro && <p className={styles['error-message']}>{erro}</p>}
-            {message && <p className={styles['success-message']}>{message}</p>}
-            <form onSubmit={handleLogin}>
-                <div className={styles['input-group']}>
-                    <label htmlFor="cpf">CPF</label>
-                    <input
-                        type="text"
-                        id="cpf"
-                        value={cpf}
-                        onChange={(e) => setCpf(e.target.value)}
-                        placeholder="Digite seu CPF"
-                        required
-                    />
-                </div>
-                <div className={styles['input-group']}>
-                    <label htmlFor="senha">Senha</label>
-                    <input
-                        type="password"
-                        id="senha"
-                        value={senha}
-                        onChange={(e) => setSenha(e.target.value)}
-                        placeholder="Digite sua senha"
-                        required
-                    />
-                </div>
-                <button type="submit">Entrar</button>
-            </form>
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+            <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
+                <h1 className="text-2xl font-bold text-center text-blue-700 mb-6">Login</h1>
 
-            <button onClick={() => setShowForgotPassword(!showForgotPassword)} className="forgot-password-button">
-                Esqueceu a senha?
-            </button>
+                {erro && <p className="text-red-600 text-sm mb-4 text-center">{erro}</p>}
+                {message && <p className="text-green-600 text-sm mb-4 text-center">{message}</p>}
 
-            {showForgotPassword && (
-                <form onSubmit={handleForgotPassword} className="forgot-password-form">
-                    <h2>Redefinir Senha</h2>
-                    <div className={styles['input-group']}>
-                        <label htmlFor="forgotCpf">CPF</label>
+                <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                        <label htmlFor="cpf" className="block text-sm font-medium text-gray-700">CPF</label>
                         <input
                             type="text"
-                            id="forgotCpf"
+                            id="cpf"
                             value={cpf}
                             onChange={(e) => setCpf(e.target.value)}
                             placeholder="Digite seu CPF"
                             required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
-                    <div className={styles['input-group']}>
-                        <label htmlFor="email">Email</label>
+
+                    <div>
+                        <label htmlFor="senha" className="block text-sm font-medium text-gray-700">Senha</label>
                         <input
-                            type="email"
-                            id="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Digite seu email"
+                            type="password"
+                            id="senha"
+                            value={senha}
+                            onChange={(e) => setSenha(e.target.value)}
+                            placeholder="Digite sua senha"
                             required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
-                    <button type="submit">Solicitar Redefinição de Senha</button>
+
+                    <button
+                        type="submit"
+                        className="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition"
+                    >
+                        Entrar
+                    </button>
                 </form>
-            )}
+
+                <button
+                    onClick={() => setShowForgotPassword(!showForgotPassword)}
+                    className="w-full text-sm text-blue-600 mt-4 hover:underline"
+                >
+                    Esqueceu a senha?
+                </button>
+
+                {showForgotPassword && (
+                    <form onSubmit={handleForgotPassword} className="mt-6 space-y-4 border-t pt-4">
+                        <h2 className="text-lg font-semibold text-blue-700 text-center">Redefinir Senha</h2>
+
+                        <div>
+                            <label htmlFor="forgotCpf" className="block text-sm font-medium text-gray-700">CPF</label>
+                            <input
+                                type="text"
+                                id="forgotCpf"
+                                value={cpf}
+                                onChange={(e) => setCpf(e.target.value)}
+                                placeholder="Digite seu CPF"
+                                required
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        <div>
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+                            <input
+                                type="email"
+                                id="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Digite seu email"
+                                required
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="w-full bg-blue-500 text-white font-semibold py-2 rounded-lg hover:bg-blue-600 transition"
+                        >
+                            Solicitar Redefinição de Senha
+                        </button>
+                    </form>
+                )}
+            </div>
         </div>
+
     );
 };
 

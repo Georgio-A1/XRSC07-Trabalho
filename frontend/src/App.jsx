@@ -11,7 +11,6 @@ import ListaEditais from './pages/ListaEditais';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminPage from './pages/AdminPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import './App.css';
 import CadastrarDocumentos from './pages/CadastrarDocumentos';
 import AvaliarDocumentos from './pages/AvaliarDocumento';
 import ListarEditais from './pages/ListarEditais';

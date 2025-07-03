@@ -15,7 +15,6 @@ const VerificarStatusInscricoes = () => {
       navigate('/login');
       return;
     }
-
     const decoded = jwtDecode(token);
     setUsuarioId(decoded.id);
   }, [navigate]);
@@ -37,22 +36,39 @@ const VerificarStatusInscricoes = () => {
     fetchInscricoes();
   }, [usuarioId]);
 
-  if (loading) return <p>Carregando inscrições...</p>;
+  if (loading)
+    return <p className="text-center mt-10 text-gray-700">Carregando inscrições...</p>;
 
   return (
-    <div>
-      <h1>Minhas Inscrições</h1>
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6 text-gray-800">Minhas Inscrições</h1>
+
       {inscricoes.length === 0 ? (
-        <p>Você ainda não realizou nenhuma inscrição.</p>
+        <p className="text-gray-600">Você ainda não realizou nenhuma inscrição.</p>
       ) : (
-        <ul>
-          {inscricoes.map(inscricao => (
-            <li key={inscricao._id} style={{ border: '1px solid #ccc', padding: 12, marginBottom: 12 }}>
-              <h3>{inscricao.editalId?.nome_bolsa}</h3>
-              <p><strong>Status:</strong> {inscricao.status}</p>
-              <p><strong>Nota Final:</strong> {inscricao.pontuacaoFinal !== undefined ? inscricao.pontuacaoFinal.toFixed(2) : 'N/A'}</p>
+        <ul className="space-y-4">
+          {inscricoes.map((inscricao) => (
+            <li
+              key={inscricao._id}
+              className="border rounded p-4 shadow-sm bg-white"
+            >
+              <h3 className="text-xl font-semibold text-gray-900">
+                {inscricao.editalId?.nome_bolsa || 'Edital não disponível'}
+              </h3>
+              <p>
+                <strong>Status:</strong> {inscricao.status}
+              </p>
+              <p>
+                <strong>Nota Final:</strong>{' '}
+                {inscricao.pontuacaoFinal !== undefined
+                  ? inscricao.pontuacaoFinal.toFixed(2)
+                  : 'N/A'}
+              </p>
               {inscricao.observacaoAvaliador && (
-                <p><strong>Comentário do Avaliador:</strong> {inscricao.observacaoAvaliador}</p>
+                <p>
+                  <strong>Comentário do Avaliador:</strong>{' '}
+                  {inscricao.observacaoAvaliador}
+                </p>
               )}
             </li>
           ))}

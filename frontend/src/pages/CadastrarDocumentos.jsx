@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode'; // Importa a biblioteca para decodificar o JWT
-import styles from './CadastrarDocumentos.module.css';
 
 const CadastrarDocumentos = () => {
   const [documentos, setDocumentos] = useState([]);
@@ -124,30 +123,56 @@ const CadastrarDocumentos = () => {
   };
 
   return (
-    <div className={styles['cadastrar-documentos-container']}>
-      <h1>Cadastrar Documentos</h1>
-      {!documentoAtual && (
-        <div className="documentos-grid">
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-md space-y-6">
+      <h1 className="text-2xl font-bold text-gray-800">Cadastrar Documentos</h1>
+
+      {!documentoAtual ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {documentos.map((doc) => (
             <div
               key={doc.id}
-              className={`${styles['documento-box']} ${styles[doc.status]}`}
-
+              className={`
+    cursor-pointer p-4 rounded-lg shadow-md border transition 
+    ${doc.status === 'aprovado' ? 'bg-green-100 border-green-300' : ''}
+    ${doc.status === 'reprovado' ? 'bg-red-100 border-red-300' : ''}
+    ${doc.status === 'pendente' ? 'bg-yellow-100 border-yellow-300' : ''}
+    ${doc.status === 'enviado' ? 'bg-blue-100 border-blue-300' : ''}
+    hover:shadow-lg
+  `}
               onClick={() => abrirTelaDocumento(doc)}
             >
-              <h3>{doc.titulo}</h3>
-              <p>Status: {doc.status}</p>
+              <h3 className="text-lg font-semibold text-gray-800">{doc.titulo}</h3>
+              <p className="text-sm text-gray-700">Status: <span className="capitalize">{doc.status}</span></p>
             </div>
           ))}
         </div>
-      )}
-      {documentoAtual && (
-        <div className={styles['upload-container']}>
-          <h2>{`Enviar ${documentoAtual.titulo}`}</h2>
-          <input type="file" accept="application/pdf" onChange={handleFileChange} />
-          {mensagemErro && <p className="error-message">{mensagemErro}</p>}
-          <button onClick={handleUpload}>Enviar</button>
-          <button onClick={() => setDocumentoAtual(null)}>Cancelar</button>
+      ) : (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold text-gray-800">Enviar {documentoAtual.titulo}</h2>
+
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={handleFileChange}
+            className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200"
+          />
+
+          {mensagemErro && <p className="text-red-600">{mensagemErro}</p>}
+
+          <div className="flex gap-4">
+            <button
+              onClick={handleUpload}
+              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+            >
+              Enviar
+            </button>
+            <button
+              onClick={() => setDocumentoAtual(null)}
+              className="bg-gray-300 text-gray-800 px-6 py-2 rounded hover:bg-gray-400 transition"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
     </div>

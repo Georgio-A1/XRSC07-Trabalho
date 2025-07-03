@@ -1,3 +1,4 @@
+// src/pages/ExcluirEditais.jsx
 import React, { useState, useEffect } from 'react';
 
 const ExcluirEditais = () => {
@@ -48,27 +49,37 @@ const ExcluirEditais = () => {
     }
   };
 
-  if (loading) return <div>Carregando editais...</div>;
-  if (error) return <div>Erro: {error}</div>;
+  if (loading) {
+    return <div className="p-6 text-center text-gray-700">Carregando editais...</div>;
+  }
+
+  if (error) {
+    return <div className="p-6 text-center text-red-600">Erro: {error}</div>;
+  }
 
   return (
-    <div>
-      <h2>Excluir Editais</h2>
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {editais.map((edital) => (
-          <li key={edital._id} style={{ border: '1px solid #ccc', padding: '1rem', marginBottom: '1rem' }}>
-            <h3>{edital.nome_bolsa}</h3>
-            <p><strong>Período Letivo:</strong> {edital.periodo_letivo}</p>
-            <p><strong>Descrição:</strong> {edital.descricao}</p>
-            <button
-              onClick={() => handleExcluir(edital._id)}
-              style={{ color: 'white', backgroundColor: 'red', padding: '0.5rem 1rem', border: 'none' }}
-            >
-              Excluir Edital
-            </button>
-          </li>
-        ))}
-      </ul>
+    <div className="max-w-5xl mx-auto p-6">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Excluir Editais</h2>
+
+      {editais.length === 0 ? (
+        <p className="text-gray-600">Nenhum edital disponível.</p>
+      ) : (
+        <ul className="space-y-4">
+          {editais.map((edital) => (
+            <li key={edital._id} className="bg-white shadow-md rounded-lg p-4 border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-800 mb-1">{edital.nome_bolsa}</h3>
+              <p className="text-sm text-gray-600 mb-1"><strong>Período Letivo:</strong> {edital.periodo_letivo}</p>
+              <p className="text-sm text-gray-700 mb-4"><strong>Descrição:</strong> {edital.descricao}</p>
+              <button
+                onClick={() => handleExcluir(edital._id)}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors text-sm"
+              >
+                Excluir Edital
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };
