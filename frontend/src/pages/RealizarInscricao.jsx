@@ -1,280 +1,211 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 
 const RealizarInscricao = () => {
-  const { id } = useParams(); // Obtém o ID do edital da URL
+  const { id } = useParams();
   const [edital, setEdital] = useState(null);
   const [loading, setLoading] = useState(true);
   const [respostas, setRespostas] = useState({});
-  const [documentosStatus, setDocumentosStatus] = useState([]); // Estado para status dos documentos
+  const [documentosStatus, setDocumentosStatus] = useState([]);
+  const [enviando, setEnviando] = useState(false);
   const navigate = useNavigate();
 
   const handleRespostaChange = (perguntaId, valor) => {
-    console.log("pergunta", perguntaId)
-    console.log("valor", valor)
-    setRespostas((prev) => ({
-      ...prev,
-      [perguntaId]: valor, // Aqui garantimos que o valor completo será atualizado
-    }));
+    setRespostas((prev) => ({ ...prev, [perguntaId]: valor }));
   };
 
   const handleImport = async (obrigatorios = true) => {
     try {
       const documentosFiltrados = edital.documentos_exigidos
-        .filter((doc) => !obrigatorios || doc.obrigatorio === true)
-        .map((doc) => doc.tipo); // Filtra os tipos de documentos
-
-      console.log("Documentos filtrados para importação:", documentosFiltrados);
+        .filter((doc) => !obrigatorios || doc.obrigatorio)
+        .map((doc) => doc.tipo);
 
       const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Erro: Usuário não está logado.");
-        return;
-      }
+      if (!token) return alert("Usuário não está logado.");
+      const usuarioId = jwtDecode(token).id;
 
-      const decodedToken = jwtDecode(token);
-      const usuarioId = decodedToken.id;
-
-      console.log("ID do usuário decodificado:", usuarioId);
-
-      if (!usuarioId) {
-        alert("Erro: ID do usuário não encontrado no token.");
-        return;
-      }
-
-      const url = "http://localhost:5000/api/inscricoes/importar-documentos";
-
-      console.log("URL para a requisição:", url);
-
-      const response = await axios.post(url, {
+      const { data } = await axios.post("http://localhost:5000/api/inscricoes/importar-documentos", {
         usuarioId,
         editalId: id,
-        documentosObrigatorios: documentosFiltrados, // Aqui envia os tipos dos documentos
+        documentosObrigatorios: documentosFiltrados,
       });
 
-      console.log("Resposta do backend:", response.data);
-
-      const { documentosFaltantes = [], documentosImportados = [] } = response.data;
-
-      console.log("Documentos faltantes:", documentosFaltantes);
-      console.log("Documentos importados:", documentosImportados);
-
-      // Atualiza o status de todos os documentos, levando em consideração o retorno da API
       const statusAtualizado = edital.documentos_exigidos.map((doc) => {
-        const importado = documentosImportados.find(
+        const importado = data.documentosImportados.find(
           (d) => d.tipo.toLowerCase().trim() === doc.tipo.toLowerCase().trim()
         );
-
-        if (importado) {
-          return {
-            tipo: doc.tipo,
-            status: "Importado com sucesso",
-            id: importado.id, // usa o id correto do backend
-          };
-        }
-
         return {
           tipo: doc.tipo,
-          status: doc.obrigatorio
-            ? "Faltando ou não aprovado (obrigatório)"
-            : "Ignorado / Não foi encontrado (opcional)",
-          id: doc._id,
+          status: importado
+            ? "Importado com sucesso"
+            : doc.obrigatorio
+              ? "Faltando ou não aprovado (obrigatório)"
+              : "Ignorado / Não encontrado (opcional)",
+          id: importado?.id || doc._id,
         };
       });
 
-
-      console.log("Status dos documentos após atualização:", statusAtualizado);
-
-      // Atualiza o estado dos status de documentos
       setDocumentosStatus(statusAtualizado);
 
-      if (documentosFaltantes.length > 0) {
-        const mensagemFaltantes = obrigatorios
-          ? `Os seguintes documentos obrigatórios estão faltando: ${documentosFaltantes.join(", ")}.`
-          : `Os seguintes documentos não obrigatórios estão faltando ou não aprovados: ${documentosFaltantes.join(", ")}. Porém, todos os documentos obrigatórios foram registrados com sucesso.`;
-
-        console.log("Mensagem de documentos faltantes:", mensagemFaltantes);
-        alert(mensagemFaltantes);
-      } else {
+      if (data.documentosFaltantes?.length > 0) {
         alert(
           obrigatorios
-            ? "Todos os documentos obrigatórios foram cadastrados com sucesso!"
-            : "Todos os documentos foram cadastrados com sucesso!"
+            ? `Documentos obrigatórios faltando: ${data.documentosFaltantes.join(", ")}`
+            : `Documentos não obrigatórios faltando: ${data.documentosFaltantes.join(", ")}`
         );
+      } else {
+        alert("Documentos importados com sucesso!");
       }
     } catch (error) {
-      console.error("Erro ao importar documentos:", error.response?.data || error);
-      alert(
-        "Ocorreu um erro ao importar os documentos. Verifique se possui todos os documentos aprovados e tente novamente."
-      );
+      alert("Erro ao importar documentos.");
+      console.error(error);
     }
   };
 
   useEffect(() => {
     const fetchEdital = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:5000/api/inscricoes/${id}`
-        );
+        const response = await axios.get(`http://localhost:5000/api/inscricoes/${id}`);
         setEdital(response.data);
-        console.log(response.data);
       } catch (error) {
         console.error("Erro ao carregar edital:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchEdital();
   }, [id]);
 
-  if (loading) {
-    return <p>Carregando...</p>;
-  }
-
-  if (!edital) {
-    return <p>Erro ao carregar o edital.</p>;
-  }
-
   const handleSubmitInscricao = async () => {
+    if (!window.confirm("Deseja realmente enviar sua inscrição?")) return;
+
+    const obrigatoriasNaoRespondidas = edital.perguntas.filter((p) => p.obrigatoria && (respostas[p._id] === undefined || respostas[p._id] === ""));
+    if (obrigatoriasNaoRespondidas.length > 0) {
+      alert("Responda todas as perguntas obrigatórias antes de enviar.");
+      return;
+    }
+
+    const faltandoDocObrigatorio = documentosStatus.some(
+      (doc) => doc.status.includes("Faltando") && edital.documentos_exigidos.find(d => d.tipo === doc.tipo && d.obrigatorio)
+    );
+    if (faltandoDocObrigatorio) {
+      alert("Importe todos os documentos obrigatórios antes de enviar.");
+      return;
+    }
+
     try {
+      setEnviando(true);
       const token = localStorage.getItem("token");
-      if (!token) {
-        alert("Erro: Usuário não está logado.");
-        return;
-      }
+      const usuarioId = jwtDecode(token).id;
 
-      const decodedToken = jwtDecode(token);
-      const usuarioId = decodedToken.id;
-
-      if (!usuarioId) {
-        alert("Erro: ID do usuário não encontrado no token.");
-        return;
-      }
-
-      // Criando o array de respostas com perguntaId e resposta para envio ao backend
-      const respostasFormatadas = Object.keys(respostas).map((perguntaId) => ({
-        perguntaId: perguntaId,  // Incluindo o ID da pergunta
-        resposta: respostas[perguntaId],  // O valor da resposta
-      }));
-
+      const respostasFormatadas = Object.keys(respostas).map((pid) => ({ perguntaId: pid, resposta: respostas[pid] }));
       const data = {
         usuarioId,
         editalId: id,
-        respostas: respostasFormatadas,  // Respostas com formato correto
-        documentos: documentosStatus.map((doc) => ({
-          tipo: doc.tipo,
-          status: doc.status,
-          arquivoId: doc.id,  // Garantir que o id do arquivo seja enviado como 'arquivoId'
-        })),
+        respostas: respostasFormatadas,
+        documentos: documentosStatus.map((doc) => ({ tipo: doc.tipo, status: doc.status, arquivoId: doc.id })),
       };
 
-      console.log("Dados para inscrição:", data);
-
-      const faltandoDocObrigatorio = documentosStatus.some(
-        (doc) => doc.status.includes('Faltando') && edital.documentos_exigidos.find(d => d.tipo === doc.tipo && d.obrigatorio)
-      );
-      if (faltandoDocObrigatorio) {
-        alert("Você deve importar todos os documentos obrigatórios antes de enviar.");
-        return;
-      }
-
-
-      // Enviando ao backend
-      const response = await axios.post("http://localhost:5000/api/inscricoes/criar-inscricao", data);
-
-      console.log("Resposta do backend ao criar inscrição:", response.data);
-
+      await axios.post("http://localhost:5000/api/inscricoes/criar-inscricao", data);
       alert("Inscrição realizada com sucesso!");
-      navigate('/realizar-inscricao');
+      navigate("/realizar-inscricao");
     } catch (error) {
-      console.error("Erro ao criar inscrição:", error.response?.data || error);
-      alert("Erro ao realizar a inscrição. Verifique os dados e tente novamente.");
+      console.error("Erro ao criar inscrição:", error);
+      alert("Erro ao realizar a inscrição.");
+    } finally {
+      setEnviando(false);
     }
   };
 
-  const Pergunta = ({ pergunta, respostas, handleRespostaChange }) => {
-    const [valorAtual, setValorAtual] = useState(respostas[pergunta._id] || "");
+  const Pergunta = ({ pergunta, index }) => {
+    const valorAtual = respostas[pergunta._id] || "";
+    const handleChange = (v) => handleRespostaChange(pergunta._id, v);
+    const inputId = `pergunta-${pergunta._id}`;
 
-    const handleChange = (e) => setValorAtual(e.target.value);
-    const handleBlur = () => handleRespostaChange(pergunta._id, valorAtual);
+    const obrigatorioLabel = pergunta.obrigatorio ? (
+      <span className="text-red-600 font-bold ml-1" title="Campo obrigatório">*</span>
+    ) : null;
+
+
+    const renderTextoPergunta = () => (
+      <p className="block font-semibold text-gray-800">
+        {index + 1}. {pergunta.texto} {obrigatorioLabel}
+      </p>
+    );
 
     return (
-      <div className="space-y-2">
-        <label className="block font-semibold text-gray-700">{pergunta.texto}</label>
+      <div className="p-4 border border-gray-300 rounded-md shadow-sm bg-gray-50 space-y-3">
+        {/* Título da pergunta */}
+        {renderTextoPergunta()}
 
         {pergunta.subtipo === "texto_curto" && (
           <input
+            id={inputId}
             type="text"
             value={valorAtual}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => handleChange(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
           />
         )}
 
         {pergunta.subtipo === "texto_longo" && (
           <textarea
+            id={inputId}
             value={valorAtual}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="w-full border border-gray-300 rounded px-3 py-2 h-24 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => handleChange(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2 h-24 resize-y"
           />
         )}
 
         {pergunta.subtipo === "numero" && (
           <input
+            id={inputId}
             type="number"
             value={valorAtual}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => handleChange(e.target.value)}
+            className="w-full border border-gray-300 rounded px-3 py-2"
           />
         )}
 
         {pergunta.subtipo === "sim_nao" && (
-          <div className="flex gap-4">
-            {["sim", "nao"].map((val) => (
-              <label key={val} className="inline-flex items-center space-x-1">
+          <div className="flex gap-6">
+            {["sim", "nao"].map((v) => (
+              <label key={v} className="inline-flex items-center space-x-2">
                 <input
                   type="radio"
                   name={pergunta._id}
-                  value={val}
-                  checked={valorAtual === val}
-                  onChange={() => handleRespostaChange(pergunta._id, val)}
+                  value={v}
+                  checked={valorAtual === v}
+                  onChange={() => handleChange(v)}
                   className="form-radio"
                 />
-                <span className="capitalize">{val}</span>
+                <span className="capitalize">{v}</span>
               </label>
             ))}
           </div>
         )}
 
         {pergunta.subtipo === "multipla_escolha" && (
-          <div className="flex flex-col gap-1">
-            {pergunta.opcoes.map((opcao) => {
-              const checked = valorAtual?.includes(opcao._id) ?? false;
+          <div className="flex flex-col gap-2">
+            {pergunta.opcoes.map((op) => {
+              const checked = valorAtual?.includes(op._id);
               return (
-                <label key={opcao._id} className="inline-flex items-center space-x-2">
+                <label key={op._id} className="inline-flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    value={opcao._id}
+                    value={op._id}
                     checked={checked}
                     onChange={() => {
-                      const novasRespostas = [...(valorAtual || [])];
-                      const index = novasRespostas.indexOf(opcao._id);
-                      if (index === -1) {
-                        novasRespostas.push(opcao._id);
-                      } else {
-                        novasRespostas.splice(index, 1);
-                      }
-                      handleRespostaChange(pergunta._id, novasRespostas);
+                      const novas = [...(valorAtual || [])];
+                      const idx = novas.indexOf(op._id);
+                      idx === -1 ? novas.push(op._id) : novas.splice(idx, 1);
+                      handleChange(novas);
                     }}
                     className="form-checkbox"
                   />
-                  <span>{opcao.texto}</span>
+                  <span>{op.texto}</span>
                 </label>
               );
             })}
@@ -282,50 +213,50 @@ const RealizarInscricao = () => {
         )}
 
         {pergunta.subtipo === "unica_escolha" && (
-          <div className="flex flex-col gap-1">
-            {pergunta.opcoes.map((opcao) => (
-              <label key={opcao._id} className="inline-flex items-center space-x-2">
+          <div className="flex flex-col gap-2">
+            {pergunta.opcoes.map((op) => (
+              <label key={op._id} className="inline-flex items-center space-x-2">
                 <input
                   type="radio"
                   name={pergunta._id}
-                  value={opcao._id}
-                  checked={valorAtual === opcao._id}
-                  onChange={() => handleRespostaChange(pergunta._id, opcao._id)}
+                  value={op._id}
+                  checked={valorAtual === op._id}
+                  onChange={() => handleChange(op._id)}
                   className="form-radio"
                 />
-                <span>{opcao.texto}</span>
+                <span>{op.texto}</span>
               </label>
             ))}
           </div>
         )}
 
         {pergunta.subtipo === "escala_likert" && (
-          <div className="flex gap-3">
-            {[...Array(5).keys()].map((v) => {
-              const val = v + 1;
-              return (
-                <label key={val} className="inline-flex items-center space-x-1">
-                  <input
-                    type="radio"
-                    name={pergunta._id}
-                    value={val}
-                    checked={valorAtual === val}
-                    onChange={() => handleRespostaChange(pergunta._id, val)}
-                    className="form-radio"
-                  />
-                  <span>{val}</span>
-                </label>
-              );
-            })}
+          <div className="flex gap-4">
+            {[1, 2, 3, 4, 5].map((v) => (
+              <label key={v} className="inline-flex items-center space-x-2">
+                <input
+                  type="radio"
+                  name={pergunta._id}
+                  value={v}
+                  checked={valorAtual === v}
+                  onChange={() => handleChange(v)}
+                  className="form-radio"
+                />
+                <span>{v}</span>
+              </label>
+            ))}
           </div>
         )}
       </div>
     );
   };
 
+  if (loading) return <p>Carregando...</p>;
+  if (!edital) return <p>Erro ao carregar o edital.</p>;
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md space-y-8">
-      <h1 className="text-3xl font-bold text-gray-800">{`Inscrição para: ${edital.nome_bolsa}`}</h1>
+      <h1 className="text-3xl font-bold text-gray-800">Inscrição para: {edital.nome_bolsa}</h1>
       <p className="text-gray-700">{edital.descricao}</p>
 
       <section>
@@ -346,16 +277,10 @@ const RealizarInscricao = () => {
         </ul>
 
         <div className="mt-4 space-x-4">
-          <button
-            onClick={() => handleImport(true)}
-            className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"
-          >
+          <button onClick={() => handleImport(true)} className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition">
             Importar Documentos Obrigatórios
           </button>
-          <button
-            onClick={() => handleImport(false)}
-            className="bg-gray-600 text-white px-5 py-2 rounded hover:bg-gray-700 transition"
-          >
+          <button onClick={() => handleImport(false)} className="bg-gray-600 text-white px-5 py-2 rounded hover:bg-gray-700 transition">
             Importar Todos os Documentos
           </button>
         </div>
@@ -363,7 +288,7 @@ const RealizarInscricao = () => {
         <h3 className="mt-6 text-xl font-semibold text-gray-800">Status dos Documentos</h3>
         <ul className="list-disc list-inside space-y-1 text-gray-700">
           {documentosStatus.map((doc) => (
-            <li key={doc.tipo}>
+            <li key={doc.tipo} className={doc.status.includes("Faltando") ? "text-red-600" : "text-green-700"}>
               <strong>{doc.tipo}:</strong> {doc.status}
             </li>
           ))}
@@ -373,27 +298,18 @@ const RealizarInscricao = () => {
       <section>
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Perguntas</h2>
         <form className="space-y-6">
-          {edital.perguntas.map((pergunta) => (
-            <Pergunta
-              key={pergunta._id}
-              pergunta={pergunta}
-              respostas={respostas}
-              handleRespostaChange={handleRespostaChange}
-            />
+          {edital.perguntas.map((pergunta, index) => (
+            <Pergunta key={pergunta._id} pergunta={pergunta} index={index} />
           ))}
         </form>
+
       </section>
 
-      <button
-        type="button"
-        onClick={handleSubmitInscricao}
-        className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition"
-      >
-        Finalizar Inscrição
+      <button onClick={handleSubmitInscricao} disabled={enviando} className={`bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition ${enviando && "opacity-50 cursor-not-allowed"}`}>
+        {enviando ? "Enviando..." : "Finalizar Inscrição"}
       </button>
     </div>
   );
-
 };
 
 export default RealizarInscricao;

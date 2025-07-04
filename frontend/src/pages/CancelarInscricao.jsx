@@ -6,8 +6,10 @@ import { jwtDecode } from 'jwt-decode';
 const CancelarInscricao = () => {
   const [inscricoesPendentes, setInscricoesPendentes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   const [usuarioId, setUsuarioId] = useState(null);
+  const [cancelandoId, setCancelandoId] = useState(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -36,16 +38,25 @@ const CancelarInscricao = () => {
     fetchInscricoes();
   }, [usuarioId]);
 
+  const formatarData = (dataISO) => {
+    if (!dataISO) return '';
+    const [ano, mes, dia] = dataISO.substring(0, 10).split('-');
+    return `${dia}/${mes}/${ano}`;
+  };
+
   const handleCancelarInscricao = async (inscricaoId) => {
     const confirmar = window.confirm('Tem certeza que deseja cancelar esta inscrição?');
     if (!confirmar) return;
 
     try {
+      setCancelandoId(inscricaoId);
       await axios.delete(`http://localhost:5000/api/inscricoes/${inscricaoId}`);
       setInscricoesPendentes((prev) => prev.filter((inscricao) => inscricao._id !== inscricaoId));
     } catch (error) {
       console.error('Erro ao cancelar inscrição:', error);
       alert('Não foi possível cancelar a inscrição. Tente novamente.');
+    } finally {
+      setCancelandoId(null);
     }
   };
 
@@ -69,12 +80,22 @@ const CancelarInscricao = () => {
               <h2 className="text-xl font-semibold text-gray-800">{inscricao.editalId.nome_bolsa}</h2>
               <p className="text-gray-700 mb-1">{inscricao.editalId.descricao}</p>
               <p className="text-gray-600 mb-1"><strong>Período Letivo:</strong> {inscricao.editalId.periodo_letivo}</p>
+              <p className="text-gray-600 mb-1">
+                <strong>Período de Inscrição:</strong>{" "}
+                {formatarData(inscricao.editalId.data_inicio_inscricao)} - {formatarData(inscricao.editalId.data_fim_inscricao)}
+              </p>
               <p className="text-gray-600 mb-3"><strong>Status da Inscrição:</strong> {inscricao.status}</p>
               <button
+                title="Cancelar inscrição permanentemente"
                 onClick={() => handleCancelarInscricao(inscricao._id)}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition"
+                disabled={cancelandoId === inscricao._id}
+                className={`px-4 py-2 rounded transition text-white ${
+                  cancelandoId === inscricao._id
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
               >
-                Cancelar Inscrição
+                {cancelandoId === inscricao._id ? 'Cancelando...' : 'Cancelar Inscrição'}
               </button>
             </li>
           ))}

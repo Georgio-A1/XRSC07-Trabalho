@@ -17,6 +17,7 @@ const AvaliarInscricao = () => {
   const [inscricao, setInscricao] = useState(null);
   const [edital, setEdital] = useState(null);
   const [erro, setErro] = useState(null);
+  const [observacaoAvaliador, setObservacaoAvaliador] = useState('');
 
   useEffect(() => {
     const getData = async () => {
@@ -24,6 +25,7 @@ const AvaliarInscricao = () => {
         const data = await fetchInscricaoAndEdital(id);
         setInscricao(data.inscricao);
         setEdital(data.edital);
+        setObservacaoAvaliador(data.inscricao.observacaoAvaliador || '');
       } catch (error) {
         setErro(error.message);
       }
@@ -40,8 +42,6 @@ const AvaliarInscricao = () => {
     setInscricao(novaInscricao);
   };
 
-  const [observacaoAvaliador, setObservacaoAvaliador] = useState('');
-
   const salvarAvaliacao = async () => {
     const response = await fetch(`http://localhost:5000/api/avaliacao/${id}/avaliar`, {
       method: 'POST',
@@ -49,7 +49,7 @@ const AvaliarInscricao = () => {
       body: JSON.stringify({
         respostas: inscricao.respostas,
         pontuacaoFinal: inscricao.pontuacaoFinal,
-        observacaoAvaliador: observacaoAvaliador
+        observacaoAvaliador
       })
     });
 
@@ -71,8 +71,22 @@ const AvaliarInscricao = () => {
         <h2 className="text-xl font-semibold text-gray-700">Edital: {edital.nome_bolsa}</h2>
         <p><strong>Descrição:</strong> {edital.descricao}</p>
         <p><strong>Critérios de Elegibilidade:</strong> {edital.criterios_elegibilidade}</p>
-        <p><strong>Pontuação Final:</strong> {inscricao.pontuacaoFinal?.toFixed(2)}</p>
-        <p><strong>Pontuação Máxima do Edital:</strong> {edital.nota_maxima?.toFixed(2)}</p>
+        <p>
+          <strong>Pontuação Final:</strong>{' '}
+          {inscricao.pontuacaoFinal != null && edital.nota_maxima ? (
+            <>
+              {((inscricao.pontuacaoFinal / edital.nota_maxima) * 10).toFixed(2)} / 10
+              {inscricao.status === 'pendente' ? '*' : ''}
+            </>
+          ) : (
+            '—'
+          )}
+        </p>
+        <p className="text-sm text-gray-500">
+          (Nota bruta: {inscricao.pontuacaoFinal?.toFixed(2)} / {edital.nota_maxima?.toFixed(2)})
+        </p>
+
+
       </div>
 
       <div>
@@ -110,7 +124,7 @@ const AvaliarInscricao = () => {
               <p><strong>Resposta:</strong>{' '}
                 {Array.isArray(resposta.resposta)
                   ? resposta.resposta.map((r, i) => {
-                    const opcao = pergunta.opcoes.find(o => o._id === r || o._id?.toString() === r);
+                    const opcao = pergunta.opcoes?.find(o => o._id === r || o._id?.toString() === r);
                     return <span key={i}>{opcao ? opcao.texto : r}{i < resposta.resposta.length - 1 ? ', ' : ''}</span>;
                   })
                   : (() => {

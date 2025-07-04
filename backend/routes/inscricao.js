@@ -5,6 +5,7 @@ const Inscricao = require('../models/Inscricao');
 const Usuario = require('../models/Usuario');
 const Documento = require('../models/Documento');
 const { calcularPontuacaoInscricao } = require('../utils/calcularPontuacaoInscricao');
+const { calcularNotaMaximaPossivel } = require('../utils/calculoPontuacao');
 
 
 // Listar editais disponíveis para inscrição
@@ -120,7 +121,24 @@ router.post('/criar-inscricao', async (req, res) => {
             return res.status(404).json({ error: 'Edital não encontrado.' });
         }
 
-        // Usa utilitário para calcular pesos e pontuação
+        // 🔒 VALIDAÇÃO: perguntas obrigatórias devem estar respondidas
+        const respostasMap = new Map(respostas.map(r => [r.perguntaId, r.resposta]));
+        const perguntasObrigatoriasNaoRespondidas = edital.perguntas.filter(p => {
+            if (!p.obrigatorio) return false;
+            const resp = respostasMap.get(p.id);
+            if (p.subtipo === 'multipla_escolha') return !Array.isArray(resp) || resp.length === 0;
+            return resp === undefined || resp === null || resp === '';
+        });
+
+        if (perguntasObrigatoriasNaoRespondidas.length > 0) {
+            const lista = perguntasObrigatoriasNaoRespondidas.map(p => p.texto).join(', ');
+            return res.status(400).json({
+                error: 'Existem perguntas obrigatórias não respondidas.',
+                perguntasNaoRespondidas: lista,
+            });
+        }
+
+        // Cálculo da pontuação
         const { respostasComPeso, pontuacaoFinal } = calcularPontuacaoInscricao(
             respostas,
             edital.perguntas,
@@ -189,15 +207,37 @@ router.delete('/:id', async (req, res) => {
 
 // Buscar todas as inscrições de um aluno
 router.get('/usuario/:usuarioId', async (req, res) => {
-  try {
-    const inscricoes = await Inscricao.find({ usuarioId: req.params.usuarioId })
-      .populate('editalId', 'nome_bolsa descricao');
+    try {
+        // Busca inscrições do aluno com edital populado
+        const inscricoes = await Inscricao.find({ usuarioId: req.params.usuarioId })
+            .populate('editalId') // popula tudo do edital, para ter perguntas, fórmula, etc
+            .lean(); // para trabalhar com objeto simples
 
-    res.json(inscricoes);
-  } catch (err) {
-    console.error('Erro ao buscar inscrições do aluno:', err);
-    res.status(500).json({ error: 'Erro ao buscar inscrições' });
-  }
+        // Mapeia para adicionar nota máxima calculada
+        const inscricoesComNotas = inscricoes.map(inscricao => {
+            const edital = inscricao.editalId;
+            let notaMaxima = null;
+
+            if (edital?.formula_avaliacao && edital?.perguntas) {
+                try {
+                    const resultado = calcularNotaMaximaPossivel(edital);
+                    notaMaxima = resultado.nota_maxima;
+                } catch (e) {
+                    console.warn(`Erro ao calcular nota máxima da inscrição ${inscricao._id}:`, e.message);
+                }
+            }
+
+            return {
+                ...inscricao,
+                notaMaximaPossivel: notaMaxima
+            };
+        });
+
+        res.json(inscricoesComNotas);
+    } catch (err) {
+        console.error('Erro ao buscar inscrições do aluno:', err);
+        res.status(500).json({ error: 'Erro ao buscar inscrições' });
+    }
 });
 
 module.exports = router;
