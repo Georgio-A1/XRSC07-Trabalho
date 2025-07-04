@@ -89,23 +89,21 @@ router.post('/:id/avaliar', async (req, res) => {
 
         // Atualiza apenas pesoCalculado de perguntas corrigidas manualmente
         respostas.forEach(respostaCorrigida => {
-            const respostaOriginal = inscricao.respostas.find(r => r.identificadorPergunta === respostaCorrigida.identificadorPergunta);
+            const respostaOriginal = inscricao.respostas.find(
+                r => r.identificadorPergunta === respostaCorrigida.identificadorPergunta
+            );
             if (respostaOriginal) {
                 respostaOriginal.pesoCalculado = respostaCorrigida.pesoCalculado;
             }
         });
 
-        console.log('Tipo de respostas:', typeof respostas);
-        console.log('É array?', Array.isArray(respostas));
-        console.log('Conteúdo:', respostas);
-
-
-        // Recalcula a nota final com base na fórmula
+        // Recalcula a nota final com base na fórmula usando todas as respostas atualizadas da inscrição
         const resultado = calcularPontuacaoInscricao(
-            respostas,
+            inscricao.respostas, // <-- aqui: todas as respostas atualizadas
             edital.perguntas,
             edital.formula_avaliacao
         );
+
         inscricao.pontuacaoFinal = resultado.pontuacaoFinal;
 
         // Salva observação do avaliador, se enviada

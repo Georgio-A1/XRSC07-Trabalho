@@ -67,7 +67,7 @@ router.get('/encerrados-nao-finalizados', async (req, res) => {
     const hoje = new Date();
 
     const editais = await Edital.find({
-      data_fim_inscricoes: { $lt: hoje },
+      data_fim_inscricao: { $lt: hoje },
       finalizado: false
     });
 

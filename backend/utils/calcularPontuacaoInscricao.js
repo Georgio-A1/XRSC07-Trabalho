@@ -1,7 +1,9 @@
 const calcularPontuacaoInscricao = (respostas, perguntas, formulaAvaliacao) => {
   const respostasComPeso = respostas.map(respostaObj => {
-    const pergunta = perguntas.find(p =>
-      p.id === respostaObj.perguntaId || p._id.toString() === respostaObj.perguntaId
+    const pergunta = perguntas.find(p => 
+      p.id === respostaObj.perguntaId || 
+      p._id.toString() === respostaObj.perguntaId ||
+      p.id === respostaObj.identificadorPergunta  // fallback
     );
     if (!pergunta) return null;
 
@@ -37,7 +39,7 @@ const calcularPontuacaoInscricao = (respostas, perguntas, formulaAvaliacao) => {
 
       case 'texto_curto':
       case 'texto_longo':
-        pesoCalculado = respostaObj.pesoCalculado || 0; // ← nesse caso, virá manualmente da avaliação
+        pesoCalculado = respostaObj.pesoCalculado || 0; 
         break;
 
       default:
@@ -52,15 +54,17 @@ const calcularPontuacaoInscricao = (respostas, perguntas, formulaAvaliacao) => {
     };
   }).filter(Boolean);
 
-  // Substituição na fórmula
   let formula = formulaAvaliacao;
   const variaveis = formula.match(/\bQ\d+\b/g) || [];
+
   for (const id of variaveis) {
     const resp = respostasComPeso.find(r => r.identificadorPergunta === id);
     const val = resp ? resp.pesoCalculado : 0.01;
     const regex = new RegExp(`\\b${id}\\b`, 'g');
     formula = formula.replace(regex, `(${val})`);
   }
+
+  console.log('Fórmula após substituição:', formula);
 
   let pontuacaoFinal = 0;
   try {

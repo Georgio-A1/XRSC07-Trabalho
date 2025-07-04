@@ -27,6 +27,7 @@ import ListarInscricoes from './pages/ListarInscricoes';
 import AvaliarInscricao from './pages/AvaliarInscricao';
 import FecharEdital from './pages/FecharEdital';
 import VerificarStatusInscricoes from './pages/VerificarStatus';
+import Perfil from './pages/Perfil';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -84,6 +85,7 @@ function App() {
           <Route path="/responder-chamados" element={<ProtectedRoute element={<AdminPage />} />} />
           <Route path="/avaliar-documentos" element={<ProtectedRoute element={<AvaliarDocumentos />} />} />
 
+          <Route path="/perfil" element={<ProtectedRoute element={<Perfil />} />} />
           <Route path="/cadastrar-documentos" element={<ProtectedRoute element={<CadastrarDocumentos />} />} />
           <Route path="/verificar-status" element={<ProtectedRoute element={<VerificarStatusInscricoes />} />} />
 

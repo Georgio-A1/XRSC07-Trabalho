@@ -254,4 +254,51 @@ router.get('/usuario/:usuarioId', async (req, res) => {
     }
 });
 
+// POST /api/inscricoes/aprovar-automaticamente/:id
+router.post('/aprovar-automaticamente/:id', async (req, res) => {
+    try {
+        const editalId = req.params.id;
+        const edital = await Edital.findById(editalId);
+
+        if (!edital) {
+            return res.status(404).json({ error: 'Edital não encontrado.' });
+        }
+
+        if (edital.finalizado) {
+            return res.status(400).json({ error: 'Edital já está finalizado.' });
+        }
+
+        const inscricoes = await Inscricao.find({ editalId }).sort([
+            ['pontuacaoFinal', -1],
+            ['updatedAt', 1] // desempate por ordem de avaliação (mais antiga primeiro)
+        ]);
+
+        const maximo = edital.maximo_alunos_aprovados ?? 0;
+
+        let aprovadas = 0;
+        for (let i = 0; i < inscricoes.length; i++) {
+            if (aprovadas < maximo) {
+                inscricoes[i].status = 'aprovado';
+                aprovadas++;
+            } else {
+                inscricoes[i].status = 'reprovado';
+            }
+            await inscricoes[i].save();
+        }
+
+        edital.finalizado = true;
+        await edital.save();
+
+        res.status(200).json({
+            message: 'Edital finalizado com sucesso.',
+            aprovadas,
+            reprovadas: inscricoes.length - aprovadas
+        });
+
+    } catch (err) {
+        console.error('Erro ao aprovar automaticamente:', err);
+        res.status(500).json({ error: 'Erro ao aprovar automaticamente as inscrições.' });
+    }
+});
+
 module.exports = router;

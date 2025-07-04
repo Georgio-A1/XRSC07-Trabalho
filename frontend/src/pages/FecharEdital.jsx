@@ -82,12 +82,12 @@ const FecharEdital = () => {
 
               <p className="text-sm text-gray-700 mb-1">
                 <strong>Data de Fim das Inscrições:</strong>{' '}
-                {new Date(edital.data_fim_inscricoes).toLocaleDateString()}
+                {new Date(edital.data_fim_inscricao).toLocaleDateString()}
               </p>
 
               <p className="text-sm text-gray-700 mb-4">
                 <strong>Máximo de Aprovados:</strong>{' '}
-                {edital.numero_maximo_aprovados ?? 'Não especificado'}
+                {edital.maximo_alunos_aprovados ?? 'Não especificado'}
               </p>
 
               <button

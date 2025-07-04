@@ -66,4 +66,33 @@ router.post('/cadastrar', autenticarAdmin, async (req, res) => {
   }
 });
 
+// GET /api/usuarios/:id
+router.get('/:id', async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.params.id).select('-senha');
+    if (!usuario) return res.status(404).json({ error: 'Usuário não encontrado' });
+    res.json(usuario);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erro ao buscar usuário' });
+  }
+});
+
+// PUT /api/usuarios/:id
+router.put('/:id', async (req, res) => {
+  try {
+    const { email, telefone, endereco } = req.body;
+    const usuarioAtualizado = await Usuario.findByIdAndUpdate(
+      req.params.id,
+      { email, telefone, endereco },
+      { new: true, runValidators: true }
+    ).select('-senha');
+
+    res.json(usuarioAtualizado);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
 module.exports = router;

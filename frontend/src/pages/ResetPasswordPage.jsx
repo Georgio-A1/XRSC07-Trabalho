@@ -1,7 +1,6 @@
 // src/pages/ResetPasswordPage.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './ResetPasswordPage.css';
 
 const ResetPasswordPage = () => {
     const [novaSenha, setNovaSenha] = useState('');

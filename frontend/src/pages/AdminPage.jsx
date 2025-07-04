@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 //import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import './AdminPage.css';
 
 const AdminPage = () => {
     const [chamados, setChamados] = useState([]);

@@ -127,14 +127,28 @@ const RealizarInscricao = () => {
   };
 
   const Pergunta = ({ pergunta, index }) => {
-    const valorAtual = respostas[pergunta._id] || "";
-    const handleChange = (v) => handleRespostaChange(pergunta._id, v);
-    const inputId = `pergunta-${pergunta._id}`;
+    // Estado local para valor da resposta, inicializado a partir do estado global
+    const [valorAtual, setValorAtual] = useState(respostas[pergunta._id] || "");
 
+    // Sincroniza valor local quando respostas globais mudam (ex: reset, carregar dados)
+    useEffect(() => {
+      setValorAtual(respostas[pergunta._id] || "");
+    }, [respostas, pergunta._id]);
+
+    // Atualiza valor local enquanto digita (entrada fluida)
+    const handleChange = (v) => {
+      setValorAtual(v);
+    };
+
+    // Atualiza estado global só ao perder foco, sincronizando respostas para envio
+    const handleBlur = () => {
+      handleRespostaChange(pergunta._id, valorAtual);
+    };
+
+    const inputId = `pergunta-${pergunta._id}`;
     const obrigatorioLabel = pergunta.obrigatorio ? (
       <span className="text-red-600 font-bold ml-1" title="Campo obrigatório">*</span>
     ) : null;
-
 
     const renderTextoPergunta = () => (
       <p className="block font-semibold text-gray-800">
@@ -144,7 +158,6 @@ const RealizarInscricao = () => {
 
     return (
       <div className="p-4 border border-gray-300 rounded-md shadow-sm bg-gray-50 space-y-3">
-        {/* Título da pergunta */}
         {renderTextoPergunta()}
 
         {pergunta.subtipo === "texto_curto" && (
@@ -153,6 +166,7 @@ const RealizarInscricao = () => {
             type="text"
             value={valorAtual}
             onChange={(e) => handleChange(e.target.value)}
+            onBlur={handleBlur}
             className="w-full border border-gray-300 rounded px-3 py-2"
           />
         )}
@@ -162,6 +176,7 @@ const RealizarInscricao = () => {
             id={inputId}
             value={valorAtual}
             onChange={(e) => handleChange(e.target.value)}
+            onBlur={handleBlur}
             className="w-full border border-gray-300 rounded px-3 py-2 h-24 resize-y"
           />
         )}
@@ -172,6 +187,7 @@ const RealizarInscricao = () => {
             type="number"
             value={valorAtual}
             onChange={(e) => handleChange(e.target.value)}
+            onBlur={handleBlur}
             className="w-full border border-gray-300 rounded px-3 py-2"
           />
         )}
@@ -185,7 +201,10 @@ const RealizarInscricao = () => {
                   name={pergunta._id}
                   value={v}
                   checked={valorAtual === v}
-                  onChange={() => handleChange(v)}
+                  onChange={() => {
+                    handleChange(v);
+                    handleRespostaChange(pergunta._id, v); // para radio, pode atualizar direto no change
+                  }}
                   className="form-radio"
                 />
                 <span className="capitalize">{v}</span>
@@ -209,6 +228,7 @@ const RealizarInscricao = () => {
                       const idx = novas.indexOf(op._id);
                       idx === -1 ? novas.push(op._id) : novas.splice(idx, 1);
                       handleChange(novas);
+                      handleRespostaChange(pergunta._id, novas);
                     }}
                     className="form-checkbox"
                   />
@@ -228,7 +248,10 @@ const RealizarInscricao = () => {
                   name={pergunta._id}
                   value={op._id}
                   checked={valorAtual === op._id}
-                  onChange={() => handleChange(op._id)}
+                  onChange={() => {
+                    handleChange(op._id);
+                    handleRespostaChange(pergunta._id, op._id);
+                  }}
                   className="form-radio"
                 />
                 <span>{op.texto}</span>
@@ -246,7 +269,10 @@ const RealizarInscricao = () => {
                   name={pergunta._id}
                   value={v}
                   checked={valorAtual === v}
-                  onChange={() => handleChange(v)}
+                  onChange={() => {
+                    handleChange(v);
+                    handleRespostaChange(pergunta._id, v);
+                  }}
                   className="form-radio"
                 />
                 <span>{v}</span>

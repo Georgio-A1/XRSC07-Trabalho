@@ -72,6 +72,7 @@ const Dashboard = () => {
           <>
             <h2 className="text-xl font-bold text-blue-700 mb-4">Ações do Aluno</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 w-full">
+              <Card title="Meu Perfil" icon={FaUserGraduate} onClick={() => navigate('/perfil')} />
               <Card title="Cadastrar Documentos" icon={FaFileAlt} onClick={() => navigate('/cadastrar-documentos')} />
               <Card title="Realizar Inscrição" icon={FaClipboardList} onClick={() => navigate('/realizar-inscricao')} />
               <Card title="Cancelar Inscrição" icon={FaTimesCircle} onClick={() => navigate('/cancelar-inscricao')} />
@@ -85,6 +86,7 @@ const Dashboard = () => {
           <>
             <h2 className="text-xl font-bold text-green-700 mb-4 mt-8">Ações do Funcionário</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
+              <Card title="Meu Perfil" icon={FaUserGraduate} onClick={() => navigate('/perfil')} />
               <Card
                 title="Avaliar Documentos"
                 icon={FaFileAlt}
@@ -106,6 +108,7 @@ const Dashboard = () => {
           <>
             <h2 className="text-xl font-bold text-purple-700 mb-4 mt-8">Ações do Administrador</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full">
+              <Card title="Meu Perfil" icon={FaUserGraduate} onClick={() => navigate('/perfil')} />
               <Card title="Criar Edital" icon={FaPlusCircle} onClick={() => navigate('/criar-edital')} color="bg-purple-600" />
               <Card title="Editar Edital" icon={FaEdit} onClick={() => navigate('/editar-edital')} color="bg-purple-600" />
               <Card title="Fechar Edital" icon={FaLock} onClick={() => navigate('/fechar-edital')} color="bg-purple-600" />
