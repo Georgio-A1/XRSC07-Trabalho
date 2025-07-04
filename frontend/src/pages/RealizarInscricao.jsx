@@ -100,7 +100,14 @@ const RealizarInscricao = () => {
       const token = localStorage.getItem("token");
       const usuarioId = jwtDecode(token).id;
 
-      const respostasFormatadas = Object.keys(respostas).map((pid) => ({ perguntaId: pid, resposta: respostas[pid] }));
+      const respostasFormatadas = Object.keys(respostas).map((pid) => {
+        const pergunta = edital.perguntas.find(p => p._id === pid);
+        return {
+          perguntaId: pergunta?.id,
+          resposta: respostas[pid]
+        };
+      });
+
       const data = {
         usuarioId,
         editalId: id,

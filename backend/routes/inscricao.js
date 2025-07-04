@@ -13,12 +13,25 @@ router.get('/disponiveis', async (req, res) => {
     try {
         const dataAtual = new Date();
 
+        // Pegue usuarioId da query ou do header (o que fizer sentido)
+        const usuarioId = req.query.usuarioId || req.headers['usuarioid'];
+        if (!usuarioId) {
+            return res.status(400).json({ error: 'usuarioId é obrigatório' });
+        }
+
+        // Buscar IDs dos editais em que o usuário já se inscreveu
+        const inscricoesUsuario = await Inscricao.find({ usuarioId }).select('editalId').lean();
+        const editaisInscritosIds = inscricoesUsuario.map(i => i.editalId.toString());
+
+        // Buscar editais disponíveis, excluindo os que o usuário já está inscrito
         const editaisDisponiveis = await Edital.find({
             data_inicio_inscricao: { $lte: dataAtual },
             data_fim_inscricao: { $gte: dataAtual },
+            _id: { $nin: editaisInscritosIds }
         });
 
         res.json(editaisDisponiveis);
+
     } catch (error) {
         console.error('Erro ao buscar editais disponíveis:', error);
         res.status(500).json({ error: 'Erro ao buscar editais disponíveis' });
@@ -111,6 +124,7 @@ router.post('/importar-documentos', async (req, res) => {
 router.post('/criar-inscricao', async (req, res) => {
     try {
         const { usuarioId, editalId, respostas, documentos } = req.body;
+        console.log('Dados recebidos na inscrição:', req.body);
 
         if (!usuarioId || !editalId || !respostas || !documentos) {
             return res.status(400).json({ error: 'Campos obrigatórios ausentes.' });

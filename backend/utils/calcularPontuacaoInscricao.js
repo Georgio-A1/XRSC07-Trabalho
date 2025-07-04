@@ -1,6 +1,8 @@
 const calcularPontuacaoInscricao = (respostas, perguntas, formulaAvaliacao) => {
   const respostasComPeso = respostas.map(respostaObj => {
-    const pergunta = perguntas.find(p => p.id === respostaObj.identificadorPergunta || p._id.toString() === respostaObj.perguntaId);
+    const pergunta = perguntas.find(p =>
+      p.id === respostaObj.perguntaId || p._id.toString() === respostaObj.perguntaId
+    );
     if (!pergunta) return null;
 
     let pesoCalculado = 0;

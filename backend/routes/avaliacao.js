@@ -87,8 +87,13 @@ router.post('/:id/avaliar', async (req, res) => {
         const edital = await Edital.findById(inscricao.editalId);
         if (!edital) return res.status(404).json({ error: 'Edital associado não encontrado' });
 
-        // Atualiza as respostas manualmente
-        inscricao.respostas = respostas;
+        // Atualiza apenas pesoCalculado de perguntas corrigidas manualmente
+        respostas.forEach(respostaCorrigida => {
+            const respostaOriginal = inscricao.respostas.find(r => r.identificadorPergunta === respostaCorrigida.identificadorPergunta);
+            if (respostaOriginal) {
+                respostaOriginal.pesoCalculado = respostaCorrigida.pesoCalculado;
+            }
+        });
 
         console.log('Tipo de respostas:', typeof respostas);
         console.log('É array?', Array.isArray(respostas));
